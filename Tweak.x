@@ -2,29 +2,37 @@
 
 %ctor {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        // 画面を取得
-        UIWindow *window = [UIApplication sharedApplication].keyWindow;
-        if (!window && @available(iOS 13.0, *)) {
-            for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
-                if (scene.activationState == UISceneActivationStateForegroundActive) {
-                    window = scene.windows.firstObject;
+        
+        UIWindow *window = nil;
+        
+        // iOS 13以降の正しいウィンドウ取得方法
+        if (@available(iOS 13.0, *)) {
+            NSSet *scenes = [[UIApplication sharedApplication] connectedScenes];
+            for (UIScene *scene in scenes) {
+                if ([scene isKindOfClass:[UIWindowScene class]] && scene.activationState == UISceneActivationStateForegroundActive) {
+                    window = ((UIWindowScene *)scene).windows.firstObject;
                     break;
                 }
             }
         }
+        
+        // iOS 13未満、または上記で見つからなかった場合
+        if (!window) {
+            window = [[UIApplication sharedApplication] keyWindow];
+        }
 
-        // ボタンを作成（左上に固定）
         if (window) {
             UIButton *btn = [UIButton buttonWithType:UIButtonTypeCustom];
-            btn.frame = CGRectMake(50, 50, 80, 40);
-            btn.backgroundColor = [UIColor redColor];
-            [btn setTitle:@"MOD MENU" forState:UIControlStateNormal];
-            btn.layer.cornerRadius = 10;
+            btn.frame = CGRectMake(50, 100, 100, 50);
+            btn.backgroundColor = [UIColor blueColor];
+            [btn setTitle:@"MENU" forState:UIControlStateNormal];
+            btn.layer.cornerRadius = 25;
             btn.clipsToBounds = YES;
             
-            // 最前面に表示
-            btn.window.windowLevel = UIWindowLevelAlert + 1;
+            // タップした時の動作を追加（とりあえず今は何もしない）
             [window addSubview:btn];
+            
+            NSLog(@"--- Battle Cats Mod: Button Added! ---");
         }
     });
 }
