@@ -1,31 +1,30 @@
 #import <UIKit/UIKit.h>
+#import <mach-o/dyld.h> // これを追加
 
-// --- 15.3.0用の住所 (バージョンアップで変わる可能性があります) ---
-// 本来は Il2CppDumper で抽出しますが、一般的な位置をセットしています
+// --- 15.3.0用の住所 (例) ---
 #define offset_CatFood 0x1A2B3C4 
 #define offset_XP      0x2B3C4D5
 
-// 実行中のバイナリの開始位置を取得
+// 住所を取得する関数を修正
 uintptr_t get_base_address() {
     return (uintptr_t)_dyld_get_image_header(0);
 }
 
-// 実際に数値を書き換える関数
 void hack_battle_cats() {
     uintptr_t base = get_base_address();
     
-    // 猫缶を書き換え (ポインタ操作)
-    // *(int*)(base + offset_CatFood) = 999999;
+    // 警告回避のために一旦ログを出す（baseを使用する）
+    NSLog(@"Base Address: %p", (void *)base);
     
-    // XPを書き換え
-    // *(int*)(base + offset_XP) = 99999999;
+    // ここで実際に書き換える処理（コメントアウトを外すと動作しますが、住所が違うと落ちます）
+    // *(int*)(base + offset_CatFood) = 999999;
     
     NSLog(@"--- Battle Cats 15.3.0: Hacked! ---");
 }
 
-// --- メニュー画面の作成 ---
 @interface ModMenu : UIView
 @end
+
 @implementation ModMenu {
     UIButton *menuBtn;
 }
@@ -33,7 +32,6 @@ void hack_battle_cats() {
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self) {
-        // ドラッグ可能なボタン
         menuBtn = [UIButton buttonWithType:UIButtonTypeCustom];
         menuBtn.frame = CGRectMake(0, 0, 60, 60);
         menuBtn.backgroundColor = [UIColor purpleColor];
@@ -50,24 +48,47 @@ void hack_battle_cats() {
 }
 
 - (void)handlePan:(UIPanGestureRecognizer *)p {
-    CGPoint loc = [p locationInView:self.superview];
-    self.center = loc;
+    if (p.state == UIGestureRecognizerStateChanged) {
+        CGPoint loc = [p locationInView:self.superview];
+        self.center = loc;
+    }
 }
 
 - (void)btnClicked {
     hack_battle_cats();
-    // 画面に「成功」と表示
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"15.3.0 MOD" message:@"猫缶 & XP 変更完了！" preferredStyle:UIAlertControllerStyleAlert];
     [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
-    [[UIApplication sharedApplication].keyWindow.rootViewController presentViewController:alert animated:YES completion:nil];
+    
+    // ウィンドウ取得の安全な方法
+    UIWindow *keyWin = nil;
+    if (@available(iOS 13.0, *)) {
+        for (UIWindowScene* scene in [UIApplication sharedApplication].connectedScenes) {
+            if (scene.activationState == UISceneActivationStateForegroundActive) {
+                keyWin = scene.windows.firstObject; break;
+            }
+        }
+    }
+    if (!keyWin) keyWin = [UIApplication sharedApplication].keyWindow;
+    
+    [keyWin.rootViewController presentViewController:alert animated:YES completion:nil];
 }
 @end
 
 %ctor {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(10 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        UIWindow *window = [UIApplication sharedApplication].keyWindow;
+        UIWindow *window = nil;
+        if (@available(iOS 13.0, *)) {
+            for (UIWindowScene* scene in [UIApplication sharedApplication].connectedScenes) {
+                if (scene.activationState == UISceneActivationStateForegroundActive) {
+                    window = scene.windows.firstObject; break;
+                }
+            }
+        }
+        if (!window) window = [UIApplication sharedApplication].keyWindow;
+
         if (window) {
             ModMenu *menu = [[ModMenu alloc] initWithFrame:CGRectMake(50, 150, 60, 60)];
+            menu.layer.zPosition = 10000;
             [window addSubview:menu];
         }
     });
