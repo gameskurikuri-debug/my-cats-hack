@@ -1,55 +1,49 @@
 #import <UIKit/UIKit.h>
 
-// ドラッグ移動用のクラス
-@interface DraggableButton : UIButton
+@interface DragButton : UIButton
 @end
-
-@implementation DraggableButton
+@implementation DragButton
 - (void)dragged:(UIPanGestureRecognizer *)p {
-    if (p.state == UIGestureRecognizerStateChanged) {
-        CGPoint loc = [p locationInView:self.superview];
-        self.center = loc;
-    }
+    CGPoint loc = [p locationInView:self.superview];
+    self.center = loc;
 }
 @end
 
-static DraggableButton *menuButton;
+static DragButton *btn;
 
-%ctor {
-    // ゲーム起動から7秒後に実行（読み込み待ち）
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(7 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        
-        UIWindow *window = nil;
-        if (@available(iOS 13.0, *)) {
-            for (UIWindowScene* scene in [UIApplication sharedApplication].connectedScenes) {
-                if (scene.activationState == UISceneActivationStateForegroundActive) {
-                    window = scene.windows.firstObject;
-                    break;
-                }
+// ボタンを表示するまで何度も繰り返す関数
+void tryAddButton() {
+    UIWindow *window = nil;
+    if (@available(iOS 13.0, *)) {
+        for (UIWindowScene* scene in [UIApplication sharedApplication].connectedScenes) {
+            if (scene.activationState == UISceneActivationStateForegroundActive) {
+                window = scene.windows.firstObject; break;
             }
         }
-        if (!window) window = [UIApplication sharedApplication].keyWindow;
+    }
+    if (!window) window = [UIApplication sharedApplication].keyWindow;
 
-        if (window) {
-            // ボタンの作成
-            menuButton = [DraggableButton buttonWithType:UIButtonTypeCustom];
-            // 画面の真ん中あたり(x:100, y:200)に配置
-            menuButton.frame = CGRectMake(100, 200, 60, 60);
-            menuButton.backgroundColor = [UIColor colorWithRed:1.0 green:0.0 blue:0.0 alpha:0.8]; // 目立つ赤
-            menuButton.layer.cornerRadius = 30;
-            [menuButton setTitle:@"MOD" forState:UIControlStateNormal];
-            menuButton.titleLabel.font = [UIFont boldSystemFontOfSize:14];
-            
-            // ドラッグ機能を追加
-            UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:menuButton action:@selector(dragged:)];
-            [menuButton addGestureRecognizer:pan];
-            
-            // 常に最前面に表示する設定
-            menuButton.layer.zPosition = 9999;
-            [window addSubview:menuButton];
-            [window bringSubviewToFront:menuButton];
-            
-            NSLog(@"--- Battle Cats Mod: Button Force Added! ---");
-        }
-    });
+    if (window && !btn) {
+        btn = [DragButton buttonWithType:UIButtonTypeCustom];
+        btn.frame = CGRectMake(80, 80, 60, 60);
+        btn.backgroundColor = [UIColor blueColor]; // 確実に見えるように「青」
+        btn.layer.cornerRadius = 30;
+        [btn setTitle:@"MENU" forState:UIControlStateNormal];
+        btn.layer.zPosition = 10000;
+        
+        UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:btn action:@selector(dragged:)];
+        [btn addGestureRecognizer:pan];
+        
+        [window addSubview:btn];
+        NSLog(@"--- MOD: Success Added! ---");
+    } else if (!btn) {
+        // まだ画面の準備ができていなければ、1秒後に再試行
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            tryAddButton();
+        });
+    }
+}
+
+%ctor {
+    tryAddButton();
 }
