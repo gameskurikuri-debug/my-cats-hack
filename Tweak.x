@@ -1,46 +1,30 @@
 #import <UIKit/UIKit.h>
 
-// ドラッグ移動を可能にするためのインターフェース宣言
-@interface DraggableButton : UIButton
-@end
-
-@implementation DraggableButton
-- (void)dragged:(UIPanGestureRecognizer *)p {
-    CGPoint loc = [p locationInView:self.superview];
-    self.center = loc;
-}
-@end
-
-// ボタンを表示する関数
-void setupMenu() {
+%ctor {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        UIWindow *window = nil;
-        if (@available(iOS 13.0, *)) {
-            for (UIWindowScene* windowScene in [UIApplication sharedApplication].connectedScenes) {
-                if (windowScene.activationState == UISceneActivationStateForegroundActive) {
-                    window = windowScene.windows.firstObject;
+        // 画面を取得
+        UIWindow *window = [UIApplication sharedApplication].keyWindow;
+        if (!window && @available(iOS 13.0, *)) {
+            for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
+                if (scene.activationState == UISceneActivationStateForegroundActive) {
+                    window = scene.windows.firstObject;
                     break;
                 }
             }
-        } else {
-            window = [UIApplication sharedApplication].keyWindow;
         }
 
+        // ボタンを作成（左上に固定）
         if (window) {
-            DraggableButton *menuButton = [DraggableButton buttonWithType:UIButtonTypeCustom];
-            menuButton.frame = CGRectMake(100, 100, 60, 60);
-            menuButton.backgroundColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0.7];
-            menuButton.layer.cornerRadius = 30;
-            [menuButton setTitle:@"MOD" forState:UIControlStateNormal];
+            UIButton *btn = [UIButton buttonWithType:UIButtonTypeCustom];
+            btn.frame = CGRectMake(50, 50, 80, 40);
+            btn.backgroundColor = [UIColor redColor];
+            [btn setTitle:@"MOD MENU" forState:UIControlStateNormal];
+            btn.layer.cornerRadius = 10;
+            btn.clipsToBounds = YES;
             
-            UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:menuButton action:@selector(dragged:)];
-            [menuButton addGestureRecognizer:pan];
-            
-            [window addSubview:menuButton];
+            // 最前面に表示
+            btn.window.windowLevel = UIWindowLevelAlert + 1;
+            [window addSubview:btn];
         }
     });
-}
-
-%ctor {
-    setupMenu();
 }
