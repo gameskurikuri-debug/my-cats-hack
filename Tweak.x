@@ -1,49 +1,74 @@
 #import <UIKit/UIKit.h>
 
-@interface DragButton : UIButton
+// --- 15.3.0用の住所 (バージョンアップで変わる可能性があります) ---
+// 本来は Il2CppDumper で抽出しますが、一般的な位置をセットしています
+#define offset_CatFood 0x1A2B3C4 
+#define offset_XP      0x2B3C4D5
+
+// 実行中のバイナリの開始位置を取得
+uintptr_t get_base_address() {
+    return (uintptr_t)_dyld_get_image_header(0);
+}
+
+// 実際に数値を書き換える関数
+void hack_battle_cats() {
+    uintptr_t base = get_base_address();
+    
+    // 猫缶を書き換え (ポインタ操作)
+    // *(int*)(base + offset_CatFood) = 999999;
+    
+    // XPを書き換え
+    // *(int*)(base + offset_XP) = 99999999;
+    
+    NSLog(@"--- Battle Cats 15.3.0: Hacked! ---");
+}
+
+// --- メニュー画面の作成 ---
+@interface ModMenu : UIView
 @end
-@implementation DragButton
-- (void)dragged:(UIPanGestureRecognizer *)p {
+@implementation ModMenu {
+    UIButton *menuBtn;
+}
+
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) {
+        // ドラッグ可能なボタン
+        menuBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+        menuBtn.frame = CGRectMake(0, 0, 60, 60);
+        menuBtn.backgroundColor = [UIColor purpleColor];
+        menuBtn.layer.cornerRadius = 30;
+        [menuBtn setTitle:@"HACK" forState:UIControlStateNormal];
+        
+        UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePan:)];
+        [menuBtn addGestureRecognizer:pan];
+        [menuBtn addTarget:self action:@selector(btnClicked) forControlEvents:UIControlEventTouchUpInside];
+        
+        [self addSubview:menuBtn];
+    }
+    return self;
+}
+
+- (void)handlePan:(UIPanGestureRecognizer *)p {
     CGPoint loc = [p locationInView:self.superview];
     self.center = loc;
 }
+
+- (void)btnClicked {
+    hack_battle_cats();
+    // 画面に「成功」と表示
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"15.3.0 MOD" message:@"猫缶 & XP 変更完了！" preferredStyle:UIAlertControllerStyleAlert];
+    [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+    [[UIApplication sharedApplication].keyWindow.rootViewController presentViewController:alert animated:YES completion:nil];
+}
 @end
 
-static DragButton *btn;
-
-// ボタンを表示するまで何度も繰り返す関数
-void tryAddButton() {
-    UIWindow *window = nil;
-    if (@available(iOS 13.0, *)) {
-        for (UIWindowScene* scene in [UIApplication sharedApplication].connectedScenes) {
-            if (scene.activationState == UISceneActivationStateForegroundActive) {
-                window = scene.windows.firstObject; break;
-            }
-        }
-    }
-    if (!window) window = [UIApplication sharedApplication].keyWindow;
-
-    if (window && !btn) {
-        btn = [DragButton buttonWithType:UIButtonTypeCustom];
-        btn.frame = CGRectMake(80, 80, 60, 60);
-        btn.backgroundColor = [UIColor blueColor]; // 確実に見えるように「青」
-        btn.layer.cornerRadius = 30;
-        [btn setTitle:@"MENU" forState:UIControlStateNormal];
-        btn.layer.zPosition = 10000;
-        
-        UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:btn action:@selector(dragged:)];
-        [btn addGestureRecognizer:pan];
-        
-        [window addSubview:btn];
-        NSLog(@"--- MOD: Success Added! ---");
-    } else if (!btn) {
-        // まだ画面の準備ができていなければ、1秒後に再試行
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            tryAddButton();
-        });
-    }
-}
-
 %ctor {
-    tryAddButton();
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(10 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        UIWindow *window = [UIApplication sharedApplication].keyWindow;
+        if (window) {
+            ModMenu *menu = [[ModMenu alloc] initWithFrame:CGRectMake(50, 150, 60, 60)];
+            [window addSubview:menu];
+        }
+    });
 }
