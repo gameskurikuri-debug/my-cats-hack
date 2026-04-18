@@ -1,0 +1,8 @@
+Package: com.yourname.battlecatsmod
+Name: BattleCatsMod
+Depends: mobilesubstrate
+Version: 0.0.1
+Architecture: iphoneos-arm64
+Maintainer: gameskurikuri
+Author: gameskurikuri
+Section: Tweaks
