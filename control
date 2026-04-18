@@ -1,8 +1,8 @@
-Package: com.yourname.battlecatsmod
-Name: BattleCatsMod
+Package: com.yourname.mcclient
+Name: MC Client
 Depends: mobilesubstrate
 Version: 0.0.1
 Architecture: iphoneos-arm64
-Maintainer: gameskurikuri
-Author: gameskurikuri
+Maintainer: HAMZAEDITYZ
+Author: HAMZAEDITYZ
 Section: Tweaks
